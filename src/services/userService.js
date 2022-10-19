@@ -122,7 +122,6 @@ let createNewUser = (data) => {
                     roleId: data.roleId
                 })
             }
-
             resolve({
                 errCode: 0,
                 message: 'OK'
