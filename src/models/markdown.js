@@ -5,7 +5,8 @@ const {
 const { sequelize } = require('.');
 module.exports = (sequelize, DataTypes) => {
     class Markdown extends Model {
-        static associations(models) {
+        static associate(models) {
+            Markdown.belongsTo(models.User, { foreignKey: 'doctorId' })
 
         }
     };
