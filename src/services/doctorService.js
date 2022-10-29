@@ -60,9 +60,8 @@ let saveDetailInforDoctor = (inputData) => {
                     contentHTML: inputData.contentHTML,
                     contentMarkdown: inputData.contentMarkdown,
                     description: inputData.description,
-                    doctorId: 1,
-                    specialtyId: 1,
-                    clinicId: 1,
+                    doctorId: inputData.doctorId
+
                 })
                 resolve({
                     errCode: 0,
@@ -83,7 +82,7 @@ let getDetailDoctorId = (inputId) => {
             if (!inputId) {
                 resolve({
                     errCode: 1,
-                    errMessage: 'Missing required parameter!123'
+                    errMessage: 'Missing required parameter!'
                 })
             } else {
                 let data = await db.User.findOne({
