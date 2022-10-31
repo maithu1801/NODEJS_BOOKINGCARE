@@ -140,7 +140,6 @@ let getDetailDoctorId = (inputId) => {
 let bulkCreateSchedule = (data) => {
     return new Promise(async (resolve, reject) => {
         try {
-            console.log('check data: ', data)
             if (!data.arrSchedule || !data.doctorId || !data.formatedDate) {
                 resolve({
                     errCode: 1,
@@ -154,6 +153,10 @@ let bulkCreateSchedule = (data) => {
                         return item;
                     })
                 }
+
+                console.log('Schedule', schedule);
+
+                // get all existing data
                 let existing = await db.Schedule.findAll(
                     {
                         where: { doctorId: data.doctorId, date: data.formatedDate },
@@ -161,20 +164,28 @@ let bulkCreateSchedule = (data) => {
                         raw: true
                     }
                 );
+                console.log('Kiemtra lay data', existing);
 
-                if (existing && existing.length > 0) {
-                    existing = existing.map(item => {
-                        item.date = new Date(item.date).getTime();
-                        return item;
-                    })
-                }
+                //convert date
+                // if (existing && existing.length > 0) {
+                //     existing = existing.map(item => {
+                //         item.date = new Date(item.date).getTime();
+                //         return item;
+                //     })
+                // }
+                // console.log('Kiemtra existing đổi date: ', existing);
 
+
+                //compare different( chỗ này lấy phần tử khác, differenceWith của lodash -đã cài)
                 let toCreate = _.differenceWith(schedule, existing, (a, b) => {
                     return a.timeType === b.timeType && a.date === b.date;
                 });
+                console.log('khac========toCreate: ', toCreate);
 
+
+                //create data
                 if (toCreate && toCreate.length > 0) {
-                    await db.Schedules.bulkCreate(toCreate);
+                    await db.Schedule.bulkCreate(toCreate);
                 }
                 resolve({
                     errCode: 0,
@@ -187,11 +198,41 @@ let bulkCreateSchedule = (data) => {
     })
 }
 
+let getScheduleByDate = (doctorId, date) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            if (!doctorId || !date) {
 
+                resolve({
+                    errCode: 1,
+                    errMessage: 'Missing required parmeter!'
+                })
+            } else {
+                console.log('da vao day');
+                let dataSchedule = await db.Schedule.findAll({
+                    where: {
+                        doctorId: doctorId,
+                        date: date
+                    }
+                })
+                if (!dataSchedule)
+                    dataSchedule = [];
+
+                resolve({
+                    errCode: 0,
+                    data: dataSchedule
+                })
+            }
+        } catch (e) {
+            reject(e);
+        }
+    })
+}
 module.exports = {
     getTopDoctorHome: getTopDoctorHome,
     getAllDoctors: getAllDoctors,
     saveDetailInforDoctor: saveDetailInforDoctor,
     getDetailDoctorId: getDetailDoctorId,
-    bulkCreateSchedule: bulkCreateSchedule
+    bulkCreateSchedule: bulkCreateSchedule,
+    getScheduleByDate: getScheduleByDate
 }
