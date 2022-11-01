@@ -154,7 +154,7 @@ let bulkCreateSchedule = (data) => {
                     })
                 }
 
-                console.log('Schedule', schedule);
+                console.log('========Schedule', schedule);
 
                 // get all existing data
                 let existing = await db.Schedule.findAll(
@@ -164,26 +164,18 @@ let bulkCreateSchedule = (data) => {
                         raw: true
                     }
                 );
-                console.log('Kiemtra lay data', existing);
+                console.log('=======Kiemtra lay data', existing);
 
-                //convert date
-                // if (existing && existing.length > 0) {
-                //     existing = existing.map(item => {
-                //         item.date = new Date(item.date).getTime();
-                //         return item;
-                //     })
-                // }
-                // console.log('Kiemtra existing đổi date: ', existing);
 
 
                 //compare different( chỗ này lấy phần tử khác, differenceWith của lodash -đã cài)
                 let toCreate = _.differenceWith(schedule, existing, (a, b) => {
-                    return a.timeType === b.timeType && a.date === b.date;
+                    return a.timeType === b.timeType && +a.date === +b.date;
                 });
-                console.log('khac========toCreate: ', toCreate);
+                console.log('========toCreate: ', toCreate);
 
 
-                //create data
+                // //create data
                 if (toCreate && toCreate.length > 0) {
                     await db.Schedule.bulkCreate(toCreate);
                 }
@@ -208,12 +200,17 @@ let getScheduleByDate = (doctorId, date) => {
                     errMessage: 'Missing required parmeter!'
                 })
             } else {
-                console.log('da vao day');
                 let dataSchedule = await db.Schedule.findAll({
                     where: {
                         doctorId: doctorId,
                         date: date
-                    }
+                    },
+
+                    include: [
+                        { model: db.Allcode, as: 'timeTypeData', attributes: ['valueEn', 'valueVi'] },
+                    ],
+                    raw: false,
+                    nest: true
                 })
                 if (!dataSchedule)
                     dataSchedule = [];
