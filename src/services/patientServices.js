@@ -4,10 +4,11 @@ require('dotenv').config();
 let postBookAppointment = (data) => {
     return new Promise(async (resolve, reject) => {
         try {
+            console.log("xxxx", data.date); // thieu email thieu doctorir, timetype, 
             if (!data.email || !data.doctorId || !data.timeType || !data.date) {
                 resolve({
                     errCode: 1,
-                    errMessage: 'Missing parameter'
+                    errMessage: 'Missing parameter xxxxx'
                 })
             } else {
                 let user = await db.User.findOrCreate({
