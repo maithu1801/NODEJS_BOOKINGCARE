@@ -5,8 +5,8 @@ import emailService from './emailService';
 let postBookAppointment = (data) => {
     return new Promise(async (resolve, reject) => {
         try {
-
-            if (!data.email || !data.doctorId || !data.timeType || !data.date) {
+            if (!data.email || !data.doctorId || !data.timeType
+                || !data.date || !data.fullName) {
                 resolve({
                     errCode: 1,
                     errMessage: 'Missing parameter'
@@ -14,10 +14,12 @@ let postBookAppointment = (data) => {
             } else {
                 await emailService.sendSimpleEmail({
                     reciverEmail: data.email,
-                    patientName: 'Nguyen Van A',
-                    time: '8:00-9:00 Chủ nhật 5/11/2022',
-                    doctorName: "Bac si 1",
+                    patientName: data.fullName,
+                    time: data.timeString,
+                    doctorName: data.doctorName,
+                    language: data.language,
                     redirectLink: 'https://www.facebook.com/',
+
                 })
                 //upload patient
                 let user = await db.User.findOrCreate({
@@ -27,7 +29,7 @@ let postBookAppointment = (data) => {
                         roleId: 'R3'
                     },
                 });
-                console.log('>>>>>maithu check user: ', user[0])
+
                 //create a booking raecord
                 if (user && user[0]) {
                     await db.Booking.findOrCreate({
