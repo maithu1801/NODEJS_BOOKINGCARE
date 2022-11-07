@@ -200,7 +200,7 @@ let bulkCreateSchedule = (data) => {
                     })
                 }
 
-                console.log('========Schedule', schedule);
+
 
                 // get all existing data
                 let existing = await db.Schedule.findAll(
