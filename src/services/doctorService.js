@@ -111,7 +111,7 @@ let saveDetailInforDoctor = (inputData) => {
                     //update
                     doctorInfor.doctorId = inputData.doctorId;
                     doctorInfor.priceId = inputData.selectedPrice;
-                    doctorInfor.provinceId = inputData.selectProvince;
+                    doctorInfor.provinceId = inputData.selectedProvince;
                     doctorInfor.paymentId = inputData.selectedPayment;
                     doctorInfor.nameClinic = inputData.nameClinic;
                     doctorInfor.addressClinic = inputData.addressClinic;
@@ -123,11 +123,13 @@ let saveDetailInforDoctor = (inputData) => {
                     await db.Doctor_Infor.create({
                         doctorId: inputData.doctorId,
                         priceId: inputData.selectedPrice,
-                        provinceId: inputData.selectProvince,
+                        provinceId: inputData.selectedProvince,
                         paymentId: inputData.selectedPayment,
                         nameClinic: inputData.nameClinic,
                         addressClinic: inputData.addressClinic,
                         note: inputData.note,
+                        specialtyId: inputData.specialtyId,
+                        clinicId: inputData.clinicId,
                     })
                 }
 
