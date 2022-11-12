@@ -34,8 +34,6 @@ let postBookAppointment = (data) => {
 
                 })
                 //upload patient
-                console.log('gui di:',);
-
                 let user = await db.User.findOrCreate({
                     where: { email: data.email },
                     defaults: {
