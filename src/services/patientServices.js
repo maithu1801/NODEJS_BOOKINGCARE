@@ -15,7 +15,9 @@ let postBookAppointment = (data) => {
     return new Promise(async (resolve, reject) => {
         try {
             if (!data.email || !data.doctorId || !data.timeType
-                || !data.date || !data.fullName) {
+                || !data.date || !data.fullName
+                || !data.selectedGender || !data.address
+            ) {
                 resolve({
                     errCode: 1,
                     errMessage: 'Missing parameter'
@@ -32,14 +34,19 @@ let postBookAppointment = (data) => {
 
                 })
                 //upload patient
+                console.log('gui di:',);
+
                 let user = await db.User.findOrCreate({
                     where: { email: data.email },
                     defaults: {
                         email: data.email,
-                        roleId: 'R3'
+                        roleId: 'R3',
+                        gender: data.selectedGender,
+                        address: data.address,
+                        firstName: data.fullName
                     },
                 });
-
+                console.log('gui di:', user);
                 //create a booking raecord
                 if (user && user[0]) {
                     await db.Booking.findOrCreate({
