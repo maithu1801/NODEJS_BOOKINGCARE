@@ -2,7 +2,6 @@ require('dotenv').config();
 import nodemailer from 'nodemailer';
 
 let sendSimpleEmail = async (dataSend) => {
-    console.log("Nguoi nhan: ", dataSend.reciverEmail);
     let transporter = nodemailer.createTransport({
         host: "smtp.gmail.com",
         port: 587,
@@ -62,9 +61,68 @@ let getBodyHTMLEmail = (dataSend) => {
     }
     return result;
 }
+let getBodyHTMLEmailRemedy = (dataSend) => {
+    let result = ''
+    if (dataSend.language === 'vi') {
+        result =
+            `
+        <h3>Xin chào ${dataSend.patientName}!</h3>
+        <p>Bạn nhận được email này vì đã đặt lịch khám bệnh online trên Health</p>
+        <p>Thông tin đơn thuốc/hóa đơn được gửi trong file đính kèm.</p>
+
+        <div>Xin chân thành cảm ơn!</div>
+        `
+    }
+    if (dataSend.language === 'en') {
+        result =
+            `
+        <h3>Dear ${dataSend.patientName}!</h3>
+        <p>You received this email because you booked an online median appointment on the Health</p>
+        <p>pla pla</p>
+        <div>Sincerely thank!</div>
+        `
+    }
+    return result;
+}
+
+let sendAttachment = async (dataSend) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            let transporter = nodemailer.createTransport({
+                host: "smtp.gmail.com",
+                post: 587,
+                secure: false,
+                auth: {
+                    user: process.env.EMAIL_APP,
+                    pass: process.env.EMAIL_APP_PASSWORD,
+
+                },
+            });
+
+            //send mail with defined transport object
+            let infor = await transporter.sendMail({
+                from: '"Health" <maithu1801@gmail.com>',
+                to: dataSend.email,
+                subject: "Kết quả đặt lịch khám bệnh",
+                html: getBodyHTMLEmailRemedy(dataSend),
+                attachments: [
+                    {
+                        filename: `remedy-${dataSend.patientId}-${new Date().getTime()}.png`,
+                        content: dataSend.imgBase64.split("base64,")[1],
+                        encoding: 'base64'
+                    },
+                ],
+            });
+            resolve(true)
+        } catch (e) {
+            reject(e)
+        }
+    })
+}
 
 
 
 module.exports = {
     sendSimpleEmail: sendSimpleEmail,
+    sendAttachment: sendAttachment
 }

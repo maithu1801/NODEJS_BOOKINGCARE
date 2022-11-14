@@ -44,7 +44,7 @@ let postBookAppointment = (data) => {
                         firstName: data.fullName
                     },
                 });
-                console.log('gui di:', user);
+
                 //create a booking raecord
                 if (user && user[0]) {
                     await db.Booking.findOrCreate({
