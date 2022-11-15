@@ -125,7 +125,7 @@ let getListPatientForDoctor = async (req, res) => {
         console.log(e);
         return res.status(200).json({
             errCode: -1,
-            errrMessage: 'Error from the serser111'
+            errrMessage: 'Error from the serser'
         })
     }
 }
