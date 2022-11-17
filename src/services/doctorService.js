@@ -384,6 +384,8 @@ let getProfileDoctorById = (inputId) => {
 }
 
 let getListPatientForDoctor = (doctorId, date) => {
+    // hàm này sao khi chọn ngày là nó sẽ chạy vào đây, nó lấy ra tên, email bệnh nhân đồ các kiểu
+    // 
     return new Promise(async (resolve, reject) => {
         try {
             if (!doctorId || !date) {

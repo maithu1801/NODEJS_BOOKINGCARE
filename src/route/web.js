@@ -49,7 +49,11 @@ let initWebRoutes = (app) => {
     router.get('/api/get-clinic', clinicController.getAllClinic);
     router.get('/api/get-detail-clinic-by-id', clinicController.getDetailClinicById);
 
+    router.post('/api/create-history', historyController.createHistory);
     router.post('/api/history-patient', historyController.getListHistory);
+    router.post('/api/search-patient', historyController.searchPatient);
+
+
 
 
 
