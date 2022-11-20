@@ -2,7 +2,7 @@ import db from "../models/index";
 require('dotenv').config();
 import _ from 'lodash';
 import emailService from '../services/emailService';
-
+const Op = require("sequelize").Op;
 const MAX_NUMBER_SCHEDULE = process.env.MAX_NUMBER_SCHEDULE;
 
 let getTopDoctorHome = (limitInput) => {
@@ -398,11 +398,13 @@ let getListPatientForDoctor = (doctorId, date) => {
             } else {
                 let data = await db.Booking.findAll({
                     where: {
-                        statusId: 'S2',
+                        statusId: { [Op.gt]: 'S1' },
                         doctorId: doctorId,
                         date: date
                     },
-
+                    order: [
+                        ['statusId', 'ASC'],
+                    ],
                     include: [
                         {
                             model: db.User, as: 'patientData',
@@ -451,9 +453,11 @@ let sendRemedy = (data) => {
                     },
                     raw: false
                 })
+                // console.log('appointment', appointment);
                 if (appointment) {
+                    // console.log("vô if");
                     appointment.statusId = 'S3';
-                    await appointment.save()
+                    await appointment.save();
                 }
 
                 await emailService.sendAttachment(data);
@@ -468,6 +472,76 @@ let sendRemedy = (data) => {
         }
     })
 }
+let medicineManage = (data) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            let type = data.type;
+            let res = {};
+            if (type === 'get') {
+                let medicine = [];
+                medicine = await db.Medicine.findAll({
+                    where: {
+                        doctorId: data.doctorId,
+                    },
+                    raw: true,
+                    order: [
+                        ['updatedAt', 'DESC'],
+                    ],
+                })
+                res.list = medicine;
+                resolve(res);
+            } else if (type === 'new') {
+                await db.Medicine.create({
+                    nameMedicine: data.nameMedicine,
+                    doctorId: data.doctorId,
+                });
+                resolve({});
+            } else if (type === 'delete') {
+                let medicien = await db.Medicine.findOne({
+                    where: { id: data.id }
+                })
+                if (medicien) {
+                    await db.Medicine.destroy({
+                        where: { id: data.id }
+                    })
+                    resolve({})
+                }
+
+            } else if (type === 'update') {
+                let medicien = await db.Medicine.findOne({
+                    where: { id: data.id },
+                    raw: false
+                })
+                if (medicien) {
+                    medicien.nameMedicine = data.nameMedicine;
+                    await medicien.save();
+                    resolve({})
+                }
+            } else if (type === 'search') {
+                let medicine = [];
+                medicine = await db.Medicine.findAll({
+                    where: {
+                        doctorId: data.doctorId,
+                        nameMedicine: {
+                            [Op.like]: `%${data.nameMedicine}%`
+                        }
+                    },
+                    raw: true,
+                })
+                if (medicine) {
+                    res.list = medicine;
+                    resolve(res)
+                };
+            }
+            resolve({
+                err: 'NOT IF',
+            })
+        } catch (e) {
+            reject(e)
+        }
+    })
+
+}
 
 module.exports = {
     getTopDoctorHome: getTopDoctorHome,
@@ -479,5 +553,6 @@ module.exports = {
     getExtraInforDoctorById: getExtraInforDoctorById,
     getProfileDoctorById: getProfileDoctorById,
     getListPatientForDoctor: getListPatientForDoctor,
-    sendRemedy: sendRemedy
+    sendRemedy: sendRemedy,
+    medicineManage: medicineManage,
 }

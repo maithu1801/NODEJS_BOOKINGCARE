@@ -7,7 +7,6 @@ import specialtyController from '../controllers/specialtyController';
 import clinicController from '../controllers/clinicController';
 import historyController from '../controllers/historyController';
 
-
 let router = express.Router();
 
 let initWebRoutes = (app) => {
@@ -52,6 +51,9 @@ let initWebRoutes = (app) => {
     router.post('/api/create-history', historyController.createHistory);
     router.post('/api/history-patient', historyController.getListHistory);
     router.post('/api/search-patient', historyController.searchPatient);
+
+    router.post('/api/medicines-manage', doctorController.medicineManage);
+
 
 
 

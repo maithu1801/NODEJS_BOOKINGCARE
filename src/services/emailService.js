@@ -125,33 +125,7 @@ let sendAttachment = async (dataSend) => {
     })
 }
 
-//hàm này em mới viết nãy
-let getHTMLEmailRepeat = (dataSend) => {
-    let result = ''
-    if (dataSend.language === 'vi') {
-        result =
-            `
-        <h3>Xin chào ${dataSend.doctorName}!</h3>
-        <p>Bạn nhận được email này vì có lịch khám bệnh online trên Health</p>
-        <p>Thông tin đặt lịch khám bệnh: </p>
-       <div><b>Thời gian: ${dataSend.time}</b></div>
-       <div><b>Bệnh nhân: ${dataSend.patientId}</b></div>
-        <div>Xin chân thành cảm ơn!</div>
-        `
-    }
-    if (dataSend.language === 'en') {
-        result =
-            `
-        <h3>Dear ${dataSend.doctorName}!</h3>
-        <p>You received this email because you had an online medical appointment on Health</p>
-        <p>Information to schedule an appointment:</p>
-        <div><b>Time: ${dataSend.time}</b></div>
-        <div><b>Patient: ${dataSend.doctorName}</b></div>
-        <div>Sincerely thank</div>
-        `
-    }
-    return result;
-}
+
 let sendEmailBooking = async (booking) => {
 
     let time_vi = moment.unix(+booking.date / 1000).locale('vi').format('dddd - DD/MM/YYYY, h:mm a')
