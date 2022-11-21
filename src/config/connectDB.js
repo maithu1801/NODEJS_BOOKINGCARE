@@ -16,6 +16,7 @@ let connectDB = async () => {
 
         let tempId = -1;
         setInterval(async () => {
+
             // vô vòng lập
             let date = new Date();
             let now = date.getTime();
@@ -23,11 +24,14 @@ let connectDB = async () => {
                 where: {
                     id: { [Op.gt]: tempId }, // lớn hơn tempId
                     statusId: 'S2', // đã xác thực
-                    sendemail: { [Op.ne]: '1' } // chưa gửi mail
+                    [Op.or]: [
+                        { sendemail: { [Op.ne]: '1' } },
+                        { sendemail: null }
+                    ]
+                    // chưa gửi mail
                 },
                 raw: false
             });
-
             if (booking) {
                 tempId = booking.id;
                 let btime = booking.date;
@@ -41,7 +45,7 @@ let connectDB = async () => {
                 tempId = -1;
             }
             console.log('Send Email Robot Runing:', date);
-        }, 600000);
+        }, 120000);
 
     } catch (error) {
         console.error('Unable to connect to the database:', error);

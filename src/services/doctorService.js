@@ -418,7 +418,8 @@ let getListPatientForDoctor = (doctorId, date) => {
                             model: db.Allcode, as: 'timeTypeDataPatient', attributes: ['valueEn', 'valueVi'],
                         }
                     ],
-                    raw: false,
+
+                    raw: false, /// save dùng false
                     nest: true
                 })
                 // hàm này đúng ko, ddungs
