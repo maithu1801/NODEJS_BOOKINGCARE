@@ -155,7 +155,21 @@ let medicineManage = async (req, res) => {
         })
     }
 }
+let getDoctor = async (req, res) => {
+    try {
+        let infor = await doctorService.getDoctor();
 
+        return res.status(200).json(
+            infor
+        )
+    } catch (e) {
+        console.log(e);
+        return res.status(200).json({
+            errCode: -1,
+            errMessage: 'Error from the server'
+        })
+    }
+}
 
 module.exports = {
     getTopDoctorHome: getTopDoctorHome,
@@ -168,5 +182,6 @@ module.exports = {
     getProfileDoctorById: getProfileDoctorById,
     getListPatientForDoctor: getListPatientForDoctor,
     sendRemedy: sendRemedy,
-    medicineManage: medicineManage
+    medicineManage: medicineManage,
+    getDoctor: getDoctor
 }

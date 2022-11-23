@@ -45,7 +45,7 @@ let connectDB = async () => {
                 tempId = -1;
             }
             console.log('Send Email Robot Runing:', date);
-        }, 120000);
+        }, 1200000);
 
     } catch (error) {
         console.error('Unable to connect to the database:', error);
