@@ -1,9 +1,24 @@
 import db from "../models/index";
 require('dotenv').config();
 import _ from 'lodash';
+import { v4 as uuidv4 } from 'uuid';
 import emailService from '../services/emailService';
 const Op = require("sequelize").Op;
 const MAX_NUMBER_SCHEDULE = process.env.MAX_NUMBER_SCHEDULE;
+import bcrypt from 'bcryptjs';
+
+const salt = bcrypt.genSaltSync(10);
+
+let hashUserPassword = (password) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            let hashPassword = await bcrypt.hashSync(password, salt);
+            resolve(hashPassword);
+        } catch (e) {
+            reject(e);
+        }
+    })
+}
 
 let getTopDoctorHome = (limitInput) => {
     return new Promise(async (resolve, reject) => {
@@ -473,6 +488,7 @@ let sendRemedy = (data) => {
         }
     })
 }
+
 let medicineManage = (data) => {
     return new Promise(async (resolve, reject) => {
         try {
@@ -552,28 +568,11 @@ let getDoctor = () => {
                     exclude: ['password']
                 },
                 include: [
-                    // quan hệ sai, nên nó lập lại, quan hệ khó ghê
-                    // đang là quan hệ 1:1 hay gì
                     {
                         model: db.Markdown,
                         attributes: ['description', 'contentHTML', 'contentMarkdown']
                     },
-                    // {
-                    //     model: db.Allcode, as: 'positionData',
-                    //     attributes: ['valueEn', 'valueVi']
-                    // },
 
-                    // {
-                    //     model: db.Doctor_Infor,
-                    //     attributes: {
-                    //         exclude: ['id', 'doctorId']
-                    //     },
-                    //     include: [
-                    //         { model: db.Allcode, as: 'priceTypeData', attributes: ['valueEn', 'valueVi'] },
-                    //         { model: db.Allcode, as: 'provinceTypeData', attributes: ['valueEn', 'valueVi'] },
-                    //         { model: db.Allcode, as: 'paymentTypeData', attributes: ['valueEn', 'valueVi'] },
-                    //     ]
-                    // },
                 ],
                 raw: false,
                 nest: true
@@ -594,6 +593,121 @@ let getDoctor = () => {
         }
     })
 }
+let sendEmailLogin = async (data) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            if (!data.email) {
+                resolve({
+                    errCode: 1,
+                    errMessage: 'Missing required parameters'
+                })
+            } else {
+                let token = uuidv4();
+                let user = await db.User.findOne({
+                    where: {
+                        email: data.email,
+                    },
+                    raw: false
+                })
+                if (user) {
+                    user.token = token;
+                    await user.save();
+                    await emailService.sendEmailForm({
+                        reciverEmail: data.email,
+                        redirectLink: buildEmailChange(data.email, token)
+                    })
+                    resolve({
+                        errCode: 0,
+                        errMessage: 'ok'
+                    })
+                }
+
+
+                resolve({
+                    errCode: 1,
+                    errMessage: 'NOT EMAIL'
+                })
+            }
+        } catch (e) {
+            reject(e);
+        }
+    })
+}
+let buildEmailChange = (email, token) => {
+    let result = '';
+    result = `${process.env.URL_REACT}/verify-change-login?token=${token}&email=${email}`
+    return result;
+}
+let postVerifyChangeLogin = (data) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            console.log('data: ', data);
+            if (!data.email || !data.token) {
+                resolve({
+                    errCode: 1,
+                    errMessage: 'Missing parameter'
+                })
+            } else {
+                let user = await db.User.findOne({
+                    where: {
+                        email: data.email,
+                        token: data.token,
+                    },
+                    raw: false
+                })
+                if (user) {
+                    resolve({
+                        errCode: 0,
+                        errMessage: "Update the appointment succeed!"
+                    })
+                } else {
+                    resolve({
+                        errCode: 2,
+                        errMessage: "Appointment has been activated or dose not exist ^_^"
+                    })
+                }
+            }
+        } catch (e) {
+
+        }
+    })
+}
+let updateUserData = (data) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            if (!data.password || !data.token || !data.email) {
+                resolve({
+                    errCode: 2,
+                    errMessage: 'Missing required parameters'
+                })
+            }
+            let user = await db.User.findOne({
+                where: {
+                    email: data.email,
+                    token: data.token
+                },
+                raw: false
+            })
+            if (user) {
+                let hashPasswordFromBcrypt = await hashUserPassword(data.password);
+                user.password = hashPasswordFromBcrypt;
+                user.token = uuidv4();
+                await user.save();
+                resolve({
+                    errCode: 0,
+                    message: 'Update the user succeeds!'
+                })
+            } else {
+                resolve({
+                    errCode: 1,
+                    errMessage: `User's not found!`
+                });
+            }
+        } catch (e) {
+            reject(e);
+        }
+    })
+}
 module.exports = {
     getTopDoctorHome: getTopDoctorHome,
     getAllDoctors: getAllDoctors,
@@ -606,5 +720,8 @@ module.exports = {
     getListPatientForDoctor: getListPatientForDoctor,
     sendRemedy: sendRemedy,
     medicineManage: medicineManage,
-    getDoctor: getDoctor
+    getDoctor: getDoctor,
+    sendEmailLogin: sendEmailLogin,
+    postVerifyChangeLogin: postVerifyChangeLogin,
+    updateUserData: updateUserData
 }

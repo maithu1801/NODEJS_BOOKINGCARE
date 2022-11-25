@@ -107,7 +107,8 @@ let postVerifyBookAppointment = (data) => {
     })
 }
 
+
 module.exports = {
     postBookAppointment: postBookAppointment,
-    postVerifyBookAppointment: postVerifyBookAppointment
+    postVerifyBookAppointment: postVerifyBookAppointment,
 }

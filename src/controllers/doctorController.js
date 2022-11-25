@@ -143,6 +143,7 @@ let sendRemedy = async (req, res) => {
         })
     }
 }
+
 let medicineManage = async (req, res) => {
     try {
         let info = await doctorService.medicineManage(req.body);
@@ -158,7 +159,6 @@ let medicineManage = async (req, res) => {
 let getDoctor = async (req, res) => {
     try {
         let infor = await doctorService.getDoctor();
-
         return res.status(200).json(
             infor
         )
@@ -171,6 +171,40 @@ let getDoctor = async (req, res) => {
     }
 }
 
+let sendEmailLogin = async (req, res) => {
+    try {
+        let infor = await doctorService.sendEmailLogin(req.body);
+        return res.status(200).json(
+            infor
+        )
+    } catch (e) {
+        console.log(e);
+        return res.status(200).json({
+            errCode: -1,
+            errrMessage: 'Error from the server123'
+        })
+    }
+}
+let postVerifyChangeLogin = async (req, res) => {
+    try {
+        let infor = await doctorService.postVerifyChangeLogin(req.body);
+        return res.status(200).json(
+            infor
+        )
+    } catch (e) {
+        console.log(e);
+        return res.status(200).json({
+            errCode: -1,
+            errMessage: 'Error from the server'
+        })
+    }
+
+}
+let handleEditUserChange = async (req, res) => {
+    let data = req.body;
+    let message = await doctorService.updateUserData(data);
+    return res.status(200).json(message);
+}
 module.exports = {
     getTopDoctorHome: getTopDoctorHome,
     getAllDoctors: getAllDoctors,
@@ -183,5 +217,8 @@ module.exports = {
     getListPatientForDoctor: getListPatientForDoctor,
     sendRemedy: sendRemedy,
     medicineManage: medicineManage,
-    getDoctor: getDoctor
+    getDoctor: getDoctor,
+    sendEmailLogin: sendEmailLogin,
+    postVerifyChangeLogin: postVerifyChangeLogin,
+    handleEditUserChange: handleEditUserChange
 }

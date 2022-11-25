@@ -38,6 +38,10 @@ module.exports = {
             image: {
                 type: Sequelize.STRING
             },
+            token: {
+                type: Sequelize.STRING,
+                allowNull: true,
+            },
             createdAt: {
                 allowNull: false,
                 type: Sequelize.DATE

@@ -161,7 +161,7 @@ let updateUserData = (data) => {
             if (!data.id || !data.roleId || !data.positionId || !data.gender) {
                 resolve({
                     errCode: 2,
-                    errMessage: 'Missing required parameters xxx'
+                    errMessage: 'Missing required parameters'
                 })
             }
             let user = await db.User.findOne({

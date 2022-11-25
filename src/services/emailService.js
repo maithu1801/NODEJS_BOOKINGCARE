@@ -103,8 +103,6 @@ let sendAttachment = async (dataSend) => {
             });
 
             //send mail with defined transport object
-            // lap lai cho nay la gui mail lan 2 thay bin info bang cais khacs cungx ddc
-            // vd let email1, email2, rooif doi to:...,subject, html, rieng cho tung thang la dc, viet chung 1 hamben duoi luon
             let infor = await transporter.sendMail({
                 from: '"Health" <maithu1801@gmail.com>',
                 to: dataSend.email,
@@ -156,23 +154,22 @@ let sendEmailBooking = async (booking) => {
         attributes: ['email', 'firstName'],
         raw: true
     })
-    // gui mail cho bac si
-    // cái tiêu đề thì sao đây, gửi song ngữ luôn à, gửi vi thôi, goodgle dich hay nho, vi doi doi thanh en luon
+    // gui mail cho benh nhan
     doctor.title = `NHẮC HẸN LỊCH KHÁM BỆNH CHO BỆNH NHÂN ${patient.firstName} - SCHEDULE REMINDER FOR PATIENT ${patient.firstName}`
     doctor.html = `
 
     <h3>${patient.firstName} thân mến! </h3>
-    <p>Bạn có một lịch hẹn khám bệnh sắp diễn ra.</p>
+    <p>Bạn có một lịch hẹn khám bệnh sắp diễn ra tại Health.</p>
     <p>Thông tin cuộc hẹn: </p>
     <div><b>Thời gian: ${time_vi}</b></div>
-    <div><b>Bệnh nhân: ${patient.firstName}</b></div>
+    <div><b>Bác sĩ: ${doctor.lastName} ${doctor.firstName}</b></div>
     <div>Xin chân thành cảm ơn,</div>
     <br/><br/>
     <h3>Dear ${patient.firstName}! </h3>
-    <p>You have a medical appointment coming up.</p>
+    <p>You have a medical appointment coming up on Health.</p>
     <p>Appointment info: </p>
     <div><b>Time: ${time_en}</b></div>
-    <div><b>Patient: ${patient.firstName}</b></div>
+    <div><b>Doctor: ${doctor.lastName} ${doctor.firstName}</b></div>
     <div>Thank you very much,</div>
     `
     // gui mail cho bac si
@@ -182,21 +179,22 @@ let sendEmailBooking = async (booking) => {
         subject: doctor.title,
         html: doctor.html,
     });
-    // gui mail cho benh nhan
+    // gui mail cho bac si
     patient.title = `NHẮC HẸN LỊCH KHÁM BỆNH VỚI BÁC SĨ ${doctor.lastName} ${doctor.firstName}  - REMINDER THE DOCTOR'S SCHEDULE ${doctor.firstName} ${doctor.lastName}`;
     patient.html = `
     <h3>${doctor.lastName} ${doctor.firstName} thân mến! </h3>
     <p>Bạn có một lịch hẹn khám bệnh sắp diễn ra.</p>
     <p>Thông tin cuộc hẹn: </p>
     <div><b>Thời gian: ${time_vi}</b></div>
-    <div><b>Bác sĩ: ${doctor.lastName} ${doctor.firstName}</b></div>
+    <div><b>Bệnh nhân: ${patient.firstName}</b></div>
+    
     <div>Xin chân thành cảm ơn,</div>
     <br/><br/>
     <h3>Dear ${doctor.lastName} ${doctor.firstName}! </h3>
     <p>You have a medical appointment coming up.</p>
     <p>Appointment info: </p>
     <div><b>Time: ${time_en}</b></div>
-    <div><b>Doctor: ${doctor.lastName} ${doctor.firstName}</b></div>
+    <div><b>Patient: ${patient.firstName}</b></div>
     <div>Thank you very much,</div>
     `
     let emailPatient = await transporter.sendMail({
@@ -208,9 +206,57 @@ let sendEmailBooking = async (booking) => {
 }
 
 
+let sendEmailForm = async (dataSend) => {
+    let transporter = nodemailer.createTransport({
+        host: "smtp.gmail.com",
+        post: 587,
+        secure: false,
+        auth: {
+            user: process.env.EMAIL_APP,
+            pass: process.env.EMAIL_APP_PASSWORD,
+
+        },
+    });
+    let ur = await db.User.findOne({
+        where: {
+            email: dataSend.reciverEmail
+        },
+        raw: true
+    })
+    ur.title = `ĐỔI MẬT KHẨU ${ur.lastName} ${ur.firstName}  - CHANGE PASSWORD ${ur.firstName} ${ur.lastName}`;
+    ur.html = `
+     <h3>${ur.lastName} ${ur.firstName} thân mến! </h3>
+     <p>Bạn muốn đổi mật khẩu trên Health?.</p>
+     <p>Nếu thông tin trên là đúng sự thật vui lòng click vào đường dẫn 
+     để xác nhận và hoàn thành thủ tục đổi mật khẩu</p>
+     <div>
+        <a href=${dataSend.redirectLink} target="_blank">Click here</a>
+        </div>
+
+     <div>Xin chân thành cảm ơn,</div>
+     <br/><br/>
+     <h3>Dear ${ur.lastName} ${ur.firstName}! </h3>
+     <p>Want to change your password on Health?.</p>
+     <p>If the above information is true, please click on the link
+     to confirm and complete the password change procedure</p>
+     <div>
+        <a href=${dataSend.redirectLink} target="_blank">Click here</a>
+    </div>
+
+     <div>Thank you very much,</div>
+     `
+    let emailPatient = await transporter.sendMail({
+        from: '"Health" <maithu1801@gmail.com>',
+        to: ur.email,
+        subject: ur.title,
+        html: ur.html,
+    });
+}
+
 
 module.exports = {
     sendSimpleEmail: sendSimpleEmail,
     sendAttachment: sendAttachment,
-    sendEmailBooking: sendEmailBooking
+    sendEmailBooking: sendEmailBooking,
+    sendEmailForm: sendEmailForm
 }
