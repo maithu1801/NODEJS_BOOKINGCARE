@@ -1,6 +1,6 @@
 import db from "../models/index";
 import bcrypt from 'bcryptjs';
-
+const Op = require("sequelize").Op;
 const salt = bcrypt.genSaltSync(10);
 
 let hashUserPassword = (password) => {
@@ -220,6 +220,87 @@ let getAllCodeService = (typeInput) => {
     })
 }
 
+let listManage = (data) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            let res = {};
+            if (data.table === 'clinic') {
+                if (data.type === 'get') {
+                    let res = {};
+                    let info = await db.Clinic.findAll();
+                    res.info = info;
+                    resolve(res);
+                } else if (data.type === 'delete') {
+                    await db.Clinic.destroy({
+                        where: { id: data.id }
+                    })
+                    await db.Doctor_Infor.destroy({
+                        where: { clinicId: data.id }
+                    })
+                    resolve({
+                        ok: 'OK'
+                    })
+                } else if (data.type === 'search') {
+                    let info = await db.Clinic.findAll({
+                        where: {
+                            [Op.or]: {
+                                name: {
+                                    [Op.like]: `%${data.keyWord}%`
+                                },
+                                address: {
+                                    [Op.like]: `%${data.keyWord}%`
+                                },
+                            }
+                        },
+                        raw: true,
+                    })
+                    if (info) {
+                        res.info = info;
+                        resolve(res);
+                    }
+                }
+            } else if (data.table === 'specialty') {
+                if (data.type === 'get') {
+                    let res = {};
+                    let info = await db.Specialty.findAll();
+                    res.info = info;
+                    resolve(res);
+                } else if (data.type === 'delete') {
+                    await db.Specialty.destroy({
+                        where: { id: data.id }
+                    })
+                    await db.Doctor_Infor.destroy({
+                        where: { specialtyId: data.id }
+                    })
+                    resolve({
+                        ok: 'OK'
+                    })
+                } else if (data.type === 'search') {
+                    let info = await db.Specialty.findAll({
+                        where: {
+                            [Op.or]: {
+                                name: {
+                                    [Op.like]: `%${data.keyWord}%`
+                                },
+                            }
+                        },
+                        raw: true,
+                    })
+                    if (info) {
+                        res.info = info;
+                        resolve(res);
+                    }
+                }
+            }
+            resolve({
+                err: 'NOT IF',
+            })
+        } catch (e) {
+            reject(e)
+        }
+    })
+
+}
 
 module.exports = {
     handleUserLogin: handleUserLogin,
@@ -227,5 +308,6 @@ module.exports = {
     createNewUser: createNewUser,
     deleteUser: deleteUser,
     updateUserData: updateUserData,
-    getAllCodeService: getAllCodeService
+    getAllCodeService: getAllCodeService,
+    listManage: listManage
 }

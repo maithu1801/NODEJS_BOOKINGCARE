@@ -89,6 +89,18 @@ let handleChangePassword = async (req, res) => {
         user: userData.user ? userData.user : {}
     })
 }
+let listManage = async (req, res) => {
+    try {
+        let info = await userService.listManage(req.body);
+        return res.status(200).json(info);
+    } catch (e) {
+        console.log(e);
+        return res.status(200).json({
+            errCode: -1,
+            errrMessage: 'Error from the server'
+        })
+    }
+}
 
 module.exports = {
     handleLogin: handleLogin,
@@ -97,5 +109,6 @@ module.exports = {
     handleEditUser: handleEditUser,
     handleDeleteUser: handleDeleteUser,
     getAllCode: getAllCode,
-    handleChangePassword: handleChangePassword
+    handleChangePassword: handleChangePassword,
+    listManage: listManage
 }

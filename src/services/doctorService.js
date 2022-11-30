@@ -55,7 +55,10 @@ let getAllDoctors = () => {
                 attributes: {
                     exclude: ['password', 'image']
                 },
+
+                nest: true
             })
+            console.log(doctors);
             resolve({
                 errCode: 0,
                 data: doctors
@@ -89,72 +92,121 @@ let checkRequiredFields = (inputData) => {
 let saveDetailInforDoctor = (inputData) => {
     return new Promise(async (resolve, reject) => {
         try {
-            let checkObj = checkRequiredFields(inputData);
-            if (checkObj.isValid === false) {
-                resolve({
-                    errCode: 1,
-                    errMessage: `Missing parameter: ${checkObj.element}`
+            if (inputData.type && inputData.type === 'delete') {
+                console.log(inputData);
+                await db.User.destroy({
+                    where: { id: inputData.id }
                 })
+                await db.Markdown.destroy({
+                    where: { doctorId: inputData.id }
+                })
+                await db.Doctor_Infor.destroy({
+                    where: { doctorId: inputData.id }
+                })
+                await db.History.destroy({
+                    where: { doctorId: inputData.id }
+                })
+                resolve({
+                    ok: 'OK'
+                })
+            } else if (inputData.type && inputData.type === 'search') {
+                console.log("search", inputData);
+                let doctor = [];
+                let res = {};
+                doctor = await db.User.findAll({
+                    where: {
+                        roleId: 'R2',
+                        [Op.or]: {
+                            firstName: {
+                                [Op.like]: `%${inputData.keyWord}%`
+                            },
+                            lastName: {
+                                [Op.like]: `%${inputData.keyWord}%`
+                            },
+                            address: {
+                                [Op.like]: `%${inputData.keyWord}%`
+                            },
+                            email: {
+                                [Op.like]: `%${inputData.keyWord}%`
+                            },
+                        }
+                    },
+                    raw: true,
+                })
+                if (doctor) {
+                    res.doctor = doctor;
+                    resolve(res)
+                };
             } else {
-                if (inputData.action === 'CREATE') {
-                    await db.Markdown.create({
-                        contentHTML: inputData.contentHTML,
-                        contentMarkdown: inputData.contentMarkdown,
-                        description: inputData.description,
-                        doctorId: inputData.doctorId
-
+                let checkObj = checkRequiredFields(inputData);
+                if (checkObj.isValid === false) {
+                    resolve({
+                        errCode: 1,
+                        errMessage: `Missing parameter: ${checkObj.element}`
                     })
-                } else if (inputData.action === 'EDIT') {
-                    let doctorMarkdown = await db.Markdown.findOne({
-                        where: { doctorId: inputData.doctorId },
+                } else {
+                    if (inputData.action === 'CREATE') {
+                        await db.Markdown.create({
+                            contentHTML: inputData.contentHTML,
+                            contentMarkdown: inputData.contentMarkdown,
+                            description: inputData.description,
+                            doctorId: inputData.doctorId
+
+                        })
+                    } else if (inputData.action === 'EDIT') {
+                        let doctorMarkdown = await db.Markdown.findOne({
+                            where: { doctorId: inputData.doctorId },
+                            raw: false
+                        })
+                        if (doctorMarkdown) {
+                            doctorMarkdown.contentHTML = inputData.contentHTML;
+                            doctorMarkdown.contentMarkdown = inputData.contentMarkdown;
+                            doctorMarkdown.description = inputData.description;
+                            await doctorMarkdown.save()
+                        }
+                    }
+                    //upsert to doctor_infor table
+                    let doctorInfor = await db.Doctor_Infor.findOne({
+                        where: {
+                            doctorId: inputData.doctorId,
+                        },
                         raw: false
                     })
-                    if (doctorMarkdown) {
-                        doctorMarkdown.contentHTML = inputData.contentHTML;
-                        doctorMarkdown.contentMarkdown = inputData.contentMarkdown;
-                        doctorMarkdown.description = inputData.description;
-                        await doctorMarkdown.save()
+                    if (doctorInfor) {
+                        //update
+                        doctorInfor.doctorId = inputData.doctorId;
+                        doctorInfor.priceId = inputData.selectedPrice;
+                        doctorInfor.provinceId = inputData.selectedProvince;
+                        doctorInfor.paymentId = inputData.selectedPayment;
+                        doctorInfor.nameClinic = inputData.nameClinic;
+                        doctorInfor.addressClinic = inputData.addressClinic;
+                        doctorInfor.specialtyId = inputData.specialtyId;
+                        doctorInfor.clinicId = inputData.clinicId;
+                        await doctorInfor.save()
+                    } else {
+                        //create
+                        await db.Doctor_Infor.create({
+                            doctorId: inputData.doctorId,
+                            priceId: inputData.selectedPrice,
+                            provinceId: inputData.selectedProvince,
+                            paymentId: inputData.selectedPayment,
+                            nameClinic: inputData.nameClinic,
+                            addressClinic: inputData.addressClinic,
+                            note: inputData.note,
+                            specialtyId: inputData.specialtyId,
+                            clinicId: inputData.clinicId,
+                        })
                     }
-                }
-                //upsert to doctor_infor table
-                let doctorInfor = await db.Doctor_Infor.findOne({
-                    where: {
-                        doctorId: inputData.doctorId,
-                    },
-                    raw: false
-                })
-                if (doctorInfor) {
-                    //update
-                    doctorInfor.doctorId = inputData.doctorId;
-                    doctorInfor.priceId = inputData.selectedPrice;
-                    doctorInfor.provinceId = inputData.selectedProvince;
-                    doctorInfor.paymentId = inputData.selectedPayment;
-                    doctorInfor.nameClinic = inputData.nameClinic;
-                    doctorInfor.addressClinic = inputData.addressClinic;
-                    doctorInfor.specialtyId = inputData.specialtyId;
-                    doctorInfor.clinicId = inputData.clinicId;
-                    await doctorInfor.save()
-                } else {
-                    //create
-                    await db.Doctor_Infor.create({
-                        doctorId: inputData.doctorId,
-                        priceId: inputData.selectedPrice,
-                        provinceId: inputData.selectedProvince,
-                        paymentId: inputData.selectedPayment,
-                        nameClinic: inputData.nameClinic,
-                        addressClinic: inputData.addressClinic,
-                        note: inputData.note,
-                        specialtyId: inputData.specialtyId,
-                        clinicId: inputData.clinicId,
+
+                    resolve({
+                        errCode: 0,
+                        errMessage: 'Save infor doctor succeed!'
                     })
                 }
-
-                resolve({
-                    errCode: 0,
-                    errMessage: 'Save infor doctor succeed!'
-                })
             }
-
+            resolve({
+                err: "NO IF"
+            })
         } catch (e) {
             reject(e);
         }
@@ -236,8 +288,6 @@ let bulkCreateSchedule = (data) => {
                     })
                 }
 
-
-
                 // get all existing data
                 let existing = await db.Schedule.findAll(
                     {
@@ -247,18 +297,21 @@ let bulkCreateSchedule = (data) => {
                     }
                 );
 
-
-
-
-                //compare different( chỗ này lấy phần tử khác, differenceWith của lodash -đã cài)
-                let toCreate = _.differenceWith(schedule, existing, (a, b) => {
-                    return a.timeType === b.timeType && +a.date === +b.date;
-                });
-
-                // //create data
-                if (toCreate && toCreate.length > 0) {
-                    await db.Schedule.bulkCreate(toCreate);
+                if (existing) {
+                    await db.Schedule.destroy({
+                        where: { doctorId: data.doctorId, date: data.formatedDate },
+                    })
                 }
+                // //compare different( chỗ này lấy phần tử khác, differenceWith của lodash -đã cài)
+                // let toCreate = _.differenceWith(schedule, existing, (a, b) => {
+                //     return a.timeType === b.timeType && +a.date === +b.date;
+                // });
+
+                // // //create data
+                // if (toCreate && toCreate.length > 0) {
+                //     await db.Schedule.bulkCreate(toCreate);
+                // }
+                await db.Schedule.bulkCreate(schedule);
                 resolve({
                     errCode: 0,
                     errMessage: 'OK'
@@ -283,7 +336,10 @@ let getScheduleByDate = (doctorId, date) => {
                 let dataSchedule = await db.Schedule.findAll({
                     where: {
                         doctorId: doctorId,
-                        date: date
+                        date: date,
+                        maxNumber: {
+                            [Op.gt]: 0,
+                        }
                     },
 
                     include: [
@@ -511,6 +567,8 @@ let medicineManage = (data) => {
                 await db.Medicine.create({
                     nameMedicine: data.nameMedicine,
                     doctorId: data.doctorId,
+                    type: data.mType,
+                    price: data.price
                 });
                 resolve({});
             } else if (type === 'delete') {
@@ -531,6 +589,8 @@ let medicineManage = (data) => {
                 })
                 if (medicien) {
                     medicien.nameMedicine = data.nameMedicine;
+                    medicien.type = data.mType;
+                    medicien.price = data.price;
                     await medicien.save();
                     resolve({})
                 }
@@ -539,8 +599,10 @@ let medicineManage = (data) => {
                 medicine = await db.Medicine.findAll({
                     where: {
                         doctorId: data.doctorId,
-                        nameMedicine: {
-                            [Op.like]: `%${data.nameMedicine}%`
+                        [Op.or]: {
+                            nameMedicine: {
+                                [Op.like]: `%${data.nameMedicine}%`
+                            },
                         }
                     },
                     raw: true,
@@ -549,6 +611,36 @@ let medicineManage = (data) => {
                     res.list = medicine;
                     resolve(res)
                 };
+            } else if (type === 'doctorPrice') {
+                let doctor = await db.User.findOne({
+                    where: {
+                        id: data.id
+                    },
+                    attributes: {
+                        exclude: ['password', 'image']
+                    },
+                    include: [
+                        {
+                            model: db.Doctor_Infor,
+                            attributes: {
+                                exclude: ['id', 'doctorId']
+                            },
+                            include: [
+                                { model: db.Allcode, as: 'priceTypeData', attributes: ['valueEn', 'valueVi'] },
+                                { model: db.Allcode, as: 'provinceTypeData', attributes: ['valueEn', 'valueVi'] },
+                                { model: db.Allcode, as: 'paymentTypeData', attributes: ['valueEn', 'valueVi'] },
+                                { model: db.Specialty, as: 'specialtyData', attributes: ['name'] },
+                            ]
+                        },
+                    ],
+                    raw: false,
+                    nest: true
+                })
+                let res = {};
+                if (doctor) {
+                    res.doctor = doctor;
+                    resolve(res);
+                }
             }
             resolve({
                 err: 'NOT IF',
@@ -641,7 +733,7 @@ let buildEmailChange = (email, token) => {
 let postVerifyChangeLogin = (data) => {
     return new Promise(async (resolve, reject) => {
         try {
-            console.log('data: ', data);
+
             if (!data.email || !data.token) {
                 resolve({
                     errCode: 1,
@@ -723,5 +815,6 @@ module.exports = {
     getDoctor: getDoctor,
     sendEmailLogin: sendEmailLogin,
     postVerifyChangeLogin: postVerifyChangeLogin,
-    updateUserData: updateUserData
+    updateUserData: updateUserData,
+
 }

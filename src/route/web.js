@@ -59,7 +59,7 @@ let initWebRoutes = (app) => {
 
     router.post('/api/medicines-manage', doctorController.medicineManage);
 
-
+    router.post('/api/list-manage', userController.listManage);
 
 
 

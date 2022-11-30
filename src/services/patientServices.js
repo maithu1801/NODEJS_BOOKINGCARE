@@ -3,10 +3,17 @@ require('dotenv').config();
 import emailService from './emailService';
 import { v4 as uuidv4 } from 'uuid';
 import { reject } from "lodash";
+const Op = require("sequelize").Op;
 
 let buildUrlEmail = (doctorId, token) => {
     let result = '';
-    result = `${process.env.URL_REACT}/verify-booking?token=${token}&doctorId=${doctorId}`
+    result = `${process.env.URL_REACT}/verify-booking?token=${token}&doctorId=${doctorId}&type=OK`
+
+    return result;
+}
+let buildUrlEmailCacel = (doctorId, token) => {
+    let result = '';
+    result = `${process.env.URL_REACT}/verify-booking?token=${token}&doctorId=${doctorId}&type=CANCEL`
 
     return result;
 }
@@ -30,8 +37,8 @@ let postBookAppointment = (data) => {
                     time: data.timeString,
                     doctorName: data.doctorName,
                     language: data.language,
-                    redirectLink: buildUrlEmail(data.doctorId, token)
-
+                    redirectLink: buildUrlEmail(data.doctorId, token),
+                    redirectLink2: buildUrlEmailCacel(data.doctorId, token),
                 })
                 //upload patient
                 let user = await db.User.findOrCreate({
@@ -48,7 +55,12 @@ let postBookAppointment = (data) => {
                 //create a booking raecord
                 if (user && user[0]) {
                     await db.Booking.findOrCreate({
-                        where: { patientId: user[0].id },
+                        where: {
+                            patientId: user[0].id,
+                            statusId: {
+                                [Op.ne]: 'S3',
+                            },
+                        },
                         defaults: {
                             statusId: 'S1',
                             doctorId: data.doctorId,
@@ -65,6 +77,7 @@ let postBookAppointment = (data) => {
                 })
             }
         } catch (e) {
+            console.log(e);
             reject(e);
         }
     })
@@ -73,36 +86,134 @@ let postBookAppointment = (data) => {
 let postVerifyBookAppointment = (data) => {
     return new Promise(async (resolve, reject) => {
         try {
-            if (!data.doctorId || !data.token) {
+            if (!data.doctorId || !data.token || !data.type) {
                 resolve({
                     errCode: 1,
                     errMessage: 'Missing parameter'
                 })
             } else {
-                let appointment = await db.Booking.findOne({
-                    where: {
-                        doctorId: data.doctorId,
-                        token: data.token,
-                        statusId: 'S1'
-                    },
-                    raw: false
-                })
-                if (appointment) {
-                    appointment.statusId = 'S2';
-                    await appointment.save();
+                if (data.type === 'OK') {
+                    let appointment = await db.Booking.findOne({
+                        where: {
+                            doctorId: data.doctorId,
+                            token: data.token,
+                            statusId: 'S1'
+                        },
+                        raw: false
+                    })
+                    if (appointment) {
+                        appointment.statusId = 'S2';
+                        await appointment.save();
+
+                        let schedule = await db.Schedule.findOne({
+                            where: {
+                                doctorId: data.doctorId,
+                                date: appointment.date,
+                                timeType: appointment.timeType,
+                            },
+                            raw: false
+                        })
+                        if (schedule) {
+                            if (+schedule.maxNumber > 0) {
+                                schedule.maxNumber = +schedule.maxNumber - 1;
+                                await schedule.save();
+                            }
+                        }
+                        resolve({
+                            errCode: 0,
+                            errMessage: "Update the appointment succeed!"
+                        })
+                    } else {
+                        resolve({
+                            errCode: 2,
+                            errMessage: "Appointment has been activated or dose not exist ^_^"
+                        })
+                    }
+                } else if (data.type === 'CANCEL') {
+                    let appointment = await db.Booking.findOne({
+                        where: {
+                            doctorId: data.doctorId,
+                            token: data.token,
+                            statusId: {
+                                [Op.ne]: 'S3',
+                            },
+                        },
+                        raw: false
+                    })
+                    let schedule = await db.Schedule.findOne({
+                        where: {
+                            doctorId: data.doctorId,
+                            date: appointment.date,
+                            timeType: appointment.timeType,
+                        },
+                        raw: false
+                    })
+                    if (schedule) {
+                        if (+schedule.maxNumber < 10) {
+                            schedule.maxNumber = +schedule.maxNumber + 1;
+                            await schedule.save();
+                            await db.Booking.destroy({
+                                where: {
+                                    doctorId: data.doctorId,
+                                    token: data.token,
+                                    statusId: {
+                                        [Op.ne]: 'S3',
+                                    },
+                                }
+                            })
+                        }
+                    }
                     resolve({
                         errCode: 0,
                         errMessage: "Update the appointment succeed!"
                     })
-                } else {
+                } else if (data.type === 'DCANCEL') {
+                    let appointment = await db.Booking.findOne({
+                        where: {
+                            doctorId: data.doctorId,
+                            token: data.token,
+                            statusId: {
+                                [Op.ne]: 'S3',
+                            },
+                        },
+                        raw: false
+                    })
+                    let schedule = await db.Schedule.findOne({
+                        where: {
+                            doctorId: data.doctorId,
+                            date: appointment.date,
+                            timeType: appointment.timeType,
+                        },
+                        raw: false
+                    })
+                    if (schedule) {
+                        if (+schedule.maxNumber < 10) {
+                            schedule.maxNumber = +schedule.maxNumber + 1;
+                            await schedule.save();
+                            await db.Booking.destroy({
+                                where: {
+                                    doctorId: data.doctorId,
+                                    token: data.token,
+                                    statusId: {
+                                        [Op.ne]: 'S3',
+                                    },
+                                }
+                            })
+                            // gửi email cho bệnh nhân
+                            let user = await db.User.findOne({
+                                where: { id: appointment.patientId },
+                            });
+                            emailService.sendEmailCancel(user);
+                        }
+                    }
                     resolve({
-                        errCode: 2,
-                        errMessage: "Appointment has been activated or dose not exist ^_^"
+                        errCode: 0,
+                        errMessage: "Update the appointment succeed!"
                     })
                 }
             }
         } catch (e) {
-
+            console.log(e);
         }
     })
 }

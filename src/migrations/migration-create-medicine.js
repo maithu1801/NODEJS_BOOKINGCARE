@@ -14,6 +14,12 @@ module.exports = {
             doctorId: {
                 type: Sequelize.STRING
             },
+            price: {
+                type: Sequelize.STRING
+            },
+            type: {
+                type: Sequelize.STRING
+            },
             createdAt: {
                 allowNull: false,
                 type: Sequelize.DATE

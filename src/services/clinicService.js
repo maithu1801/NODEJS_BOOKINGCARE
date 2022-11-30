@@ -15,18 +15,37 @@ let createClinic = (data) => {
                 })
 
             } else {
-                await db.Clinic.create({
-                    name: data.name,
-                    address: data.address,
-                    image: data.imageBase64,
-                    descriptionHTML: data.descriptionHTML,
-                    descriptionMarkdown: data.descriptionMarkdown
-                })
+                if (data.id !== 'new') {
+                    let info = await db.Clinic.findOne({
+                        where: {
+                            id: data.id
+                        },
+                        raw: false
+                    })
+                    info.name = data.name;
+                    info.address = data.address;
+                    info.image = data.imageBase64;
+                    info.descriptionHTML = data.descriptionHTML;
+                    info.descriptionMarkdown = data.descriptionMarkdown;
+                    await info.save();
+                    resolve({
+                        errCode: 0,
+                        errMessage: 'ok'
+                    })
+                } else {
+                    await db.Clinic.create({
+                        name: data.name,
+                        address: data.address,
+                        image: data.imageBase64,
+                        descriptionHTML: data.descriptionHTML,
+                        descriptionMarkdown: data.descriptionMarkdown
+                    })
 
-                resolve({
-                    errCode: 0,
-                    errMessage: 'ok'
-                })
+                    resolve({
+                        errCode: 0,
+                        errMessage: 'ok'
+                    })
+                }
             }
         } catch (e) {
             reject(e);

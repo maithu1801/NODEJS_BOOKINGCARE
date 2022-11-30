@@ -24,6 +24,31 @@ let sendSimpleEmail = async (dataSend) => {
 
 }
 
+let sendEmailCancel = async (user) => {
+    let transporter = nodemailer.createTransport({
+        host: "smtp.gmail.com",
+        port: 587,
+        secure: false, // true for 465, false for other ports
+        auth: {
+            user: process.env.EMAIL_APP, // generated ethereal user
+            pass: process.env.EMAIL_APP_PASSWORD, // generated ethereal password
+        },
+    });
+
+    let result = `
+    <h3>Xin chào ${user.firstName}</h3>
+    <p>Bạn nhận được email này vì lịch khám bệnh online trên Health đã bị hủy bỏ bởi bác sĩ vì một số lý do không mong muốn !</p>
+    <div>Xin chân thành cảm ơn</div>
+    `
+
+    let info = await transporter.sendMail({
+        from: '"HEALTH" <maithu1801tv@gmail.com>',
+        to: user.email, // email nguoi nhan
+        subject: 'LỊCH KHÁM BỆNH ĐÃ BỊ HỦY',// tiêu đề
+        html: result,
+    });
+
+}
 let getBodyHTMLEmail = (dataSend) => {
     let result = ''
     if (dataSend.language === 'vi') {
@@ -37,7 +62,12 @@ let getBodyHTMLEmail = (dataSend) => {
         <p>Nếu thông tin trên là đúng sự thật vui lòng click vào đường dẫn 
         để xác nhận và hoàn thành thủ tục đặt lịch khám bệnh</p>
         <div>
-        <a href=${dataSend.redirectLink} target="_blank">Click here</a>
+        <a href=${dataSend.redirectLink} target="_blank">Xác nhận lịch hẹn</a>
+        </div>
+
+        <p>Nếu muốn hủy lịch hẹn hãy click vào đường dẫn bên dưới !</p>
+        <div>
+        <a href=${dataSend.redirectLink2} target="_blank">Hủy lịch hẹn</a>
         </div>
 
         <div>Xin chân thành cảm ơn</div>
@@ -258,5 +288,6 @@ module.exports = {
     sendSimpleEmail: sendSimpleEmail,
     sendAttachment: sendAttachment,
     sendEmailBooking: sendEmailBooking,
-    sendEmailForm: sendEmailForm
+    sendEmailForm: sendEmailForm,
+    sendEmailCancel: sendEmailCancel
 }
