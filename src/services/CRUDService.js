@@ -84,6 +84,7 @@ let updateUserData = (data) => {
             } else {
                 resolve();
             }
+
         } catch (e) {
             console.log(e);
         }

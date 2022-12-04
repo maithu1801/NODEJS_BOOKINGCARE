@@ -21,7 +21,6 @@ let getCRUD = (req, res) => {
 }
 let postCRUD = async (req, res) => {
     let message = await CRUDService.createNewUser(req.body);
-    console.log(message)
     return res.send('post crud from server');
 }
 let displayGetCRUD = async (req, res) => {
@@ -56,7 +55,6 @@ let putCRUD = async (req, res) => {
 
 let deleteCRUD = async (req, res) => {
     let id = req.query.id;
-    console.log("id", id);
     if (id) {
         await CRUDService.deleteUserById(id);
         return res.send('Delete the user succeed!')

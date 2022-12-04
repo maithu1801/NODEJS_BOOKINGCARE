@@ -145,7 +145,7 @@ let deleteUser = (userId) => {
                 errMessage: `The user isn't exist!`
             })
         }
-        // console.log('MaiThu check', foundUser)
+
         await db.User.destroy({
             where: { id: userId }
         })
@@ -176,10 +176,7 @@ let updateUserData = (data) => {
                 user.positionId = data.positionId;
                 user.gender = data.gender;
                 user.phonenumber = data.phonenumber;
-                if (data.avatar) {
-                    user.image = data.avatar;
-                }
-
+                user.token = '';
                 await user.save();
                 resolve({
                     errCode: 0,
@@ -192,6 +189,7 @@ let updateUserData = (data) => {
                 });
             }
         } catch (e) {
+            console.log(e);
             reject(e);
         }
     })

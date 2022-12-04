@@ -13,7 +13,7 @@ let buildUrlEmail = (doctorId, token) => {
 }
 let buildUrlEmailCacel = (doctorId, token) => {
     let result = '';
-    result = `${process.env.URL_REACT}/verify-booking?token=${token}&doctorId=${doctorId}&type=CANCEL`
+    result = `${process.env.URL_REACT}/verify-cancel?token=${token}&doctorId=${doctorId}&type=CANCEL`
 
     return result;
 }
@@ -22,7 +22,7 @@ let postBookAppointment = (data) => {
     return new Promise(async (resolve, reject) => {
         try {
             if (!data.email || !data.doctorId || !data.timeType
-                || !data.date || !data.fullName
+                || !data.date || !data.lastName || !data.firstName
                 || !data.selectedGender || !data.address
             ) {
                 resolve({
@@ -33,7 +33,9 @@ let postBookAppointment = (data) => {
                 let token = uuidv4();
                 await emailService.sendSimpleEmail({
                     reciverEmail: data.email,
-                    patientName: data.fullName,
+                    // patientName: data.fullName,
+                    lastName: data.lastName,
+                    firstName: data.firstName,
                     time: data.timeString,
                     doctorName: data.doctorName,
                     language: data.language,
@@ -48,7 +50,8 @@ let postBookAppointment = (data) => {
                         roleId: 'R3',
                         gender: data.selectedGender,
                         address: data.address,
-                        firstName: data.fullName
+                        firstName: data.firstName,
+                        lastName: data.lastName
                     },
                 });
 

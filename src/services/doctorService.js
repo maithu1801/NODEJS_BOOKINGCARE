@@ -58,7 +58,6 @@ let getAllDoctors = () => {
 
                 nest: true
             })
-            console.log(doctors);
             resolve({
                 errCode: 0,
                 data: doctors
@@ -93,7 +92,6 @@ let saveDetailInforDoctor = (inputData) => {
     return new Promise(async (resolve, reject) => {
         try {
             if (inputData.type && inputData.type === 'delete') {
-                console.log(inputData);
                 await db.User.destroy({
                     where: { id: inputData.id }
                 })
@@ -110,7 +108,7 @@ let saveDetailInforDoctor = (inputData) => {
                     ok: 'OK'
                 })
             } else if (inputData.type && inputData.type === 'search') {
-                console.log("search", inputData);
+
                 let doctor = [];
                 let res = {};
                 doctor = await db.User.findAll({
@@ -525,9 +523,9 @@ let sendRemedy = (data) => {
                     },
                     raw: false
                 })
-                // console.log('appointment', appointment);
+
                 if (appointment) {
-                    // console.log("vô if");
+
                     appointment.statusId = 'S3';
                     await appointment.save();
                 }

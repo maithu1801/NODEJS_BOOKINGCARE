@@ -36,7 +36,7 @@ let sendEmailCancel = async (user) => {
     });
 
     let result = `
-    <h3>Xin chào ${user.firstName}</h3>
+    <h3>Xin chào ${user.lastName} ${user.firstName}</h3>
     <p>Bạn nhận được email này vì lịch khám bệnh online trên Health đã bị hủy bỏ bởi bác sĩ vì một số lý do không mong muốn !</p>
     <div>Xin chân thành cảm ơn</div>
     `
@@ -53,7 +53,7 @@ let getBodyHTMLEmail = (dataSend) => {
     let result = ''
     if (dataSend.language === 'vi') {
         result = `
-        <h3>Xin chào ${dataSend.patientName}</h3>
+        <h3>Xin chào ${dataSend.firstName}</h3>
         <p>Bạn nhận được email này vì đã đặt lịch khám bệnh online trên Health</p>
          <p>Thông tin đặt lịch khám bệnh: </p>
         <div><b>Thời gian: ${dataSend.time}</b></div>
@@ -84,7 +84,12 @@ let getBodyHTMLEmail = (dataSend) => {
         <p>If the above information is correct, please click on the link
         to confirm and complete the medical appointment booking procedure</p>
         <div>
-        <a href=${dataSend.redirectLink} target="_blank">Click here</a>
+        <a href=${dataSend.redirectLink} target="_blank">Confirm appointment</a>
+        </div>
+
+        <p>If you want to cancel your appointment, please click on the link below!</p>
+        <div>
+        <a href=${dataSend.redirectLink2} target="_blank">Cancel appointment</a>
         </div>
 
         <div>Sincerely thank</div>
@@ -93,7 +98,7 @@ let getBodyHTMLEmail = (dataSend) => {
     }
     return result;
 }
-
+////////
 let getBodyHTMLEmailRemedy = (dataSend) => {
     let result = ''
     if (dataSend.language === 'vi') {
@@ -152,7 +157,7 @@ let sendAttachment = async (dataSend) => {
         }
     })
 }
-
+////////
 
 let sendEmailBooking = async (booking) => {
 
@@ -181,42 +186,41 @@ let sendEmailBooking = async (booking) => {
         where: {
             id: booking.patientId,
         },
-        attributes: ['email', 'firstName'],
+        attributes: ['email', 'firstName', 'lastName'],
         raw: true
     })
     // gui mail cho benh nhan
-    doctor.title = `NHẮC HẸN LỊCH KHÁM BỆNH CHO BỆNH NHÂN ${patient.firstName} - SCHEDULE REMINDER FOR PATIENT ${patient.firstName}`
-    doctor.html = `
+    patient.title = `NHẮC HẸN LỊCH KHÁM BỆNH CHO BỆNH NHÂN ${patient.lastName} ${patient.firstName} - SCHEDULE REMINDER FOR PATIENT ${patient.firstName} ${patient.lastName}`
+    patient.html = `
 
-    <h3>${patient.firstName} thân mến! </h3>
+    <h3>${patient.lastName} ${patient.firstName} thân mến! </h3>
     <p>Bạn có một lịch hẹn khám bệnh sắp diễn ra tại Health.</p>
     <p>Thông tin cuộc hẹn: </p>
     <div><b>Thời gian: ${time_vi}</b></div>
     <div><b>Bác sĩ: ${doctor.lastName} ${doctor.firstName}</b></div>
     <div>Xin chân thành cảm ơn,</div>
     <br/><br/>
-    <h3>Dear ${patient.firstName}! </h3>
+    <h3>Dear ${patient.firstName} ${patient.lastName}! </h3>
     <p>You have a medical appointment coming up on Health.</p>
     <p>Appointment info: </p>
     <div><b>Time: ${time_en}</b></div>
-    <div><b>Doctor: ${doctor.lastName} ${doctor.firstName}</b></div>
+    <div><b>Doctor: ${doctor.firstName} ${doctor.lastName}</b></div>
     <div>Thank you very much,</div>
     `
-    // gui mail cho bac si
     let emailDoctor = await transporter.sendMail({
         from: '"Health" <maithu1801@gmail.com>',
-        to: doctor.email,
-        subject: doctor.title,
-        html: doctor.html,
+        to: patient.email,
+        subject: patient.title,
+        html: patient.html,
     });
-    // gui mail cho bac si
-    patient.title = `NHẮC HẸN LỊCH KHÁM BỆNH VỚI BÁC SĨ ${doctor.lastName} ${doctor.firstName}  - REMINDER THE DOCTOR'S SCHEDULE ${doctor.firstName} ${doctor.lastName}`;
-    patient.html = `
+    // gui mail bác sĩ
+    doctor.title = `NHẮC HẸN LỊCH KHÁM BỆNH VỚI BÁC SĨ ${doctor.lastName} ${doctor.firstName}  - REMINDER THE DOCTOR'S SCHEDULE ${doctor.firstName} ${doctor.lastName}`;
+    doctor.html = `
     <h3>${doctor.lastName} ${doctor.firstName} thân mến! </h3>
     <p>Bạn có một lịch hẹn khám bệnh sắp diễn ra.</p>
     <p>Thông tin cuộc hẹn: </p>
     <div><b>Thời gian: ${time_vi}</b></div>
-    <div><b>Bệnh nhân: ${patient.firstName}</b></div>
+    <div><b>Bệnh nhân: ${patient.lastName} ${patient.firstName}</b></div>
     
     <div>Xin chân thành cảm ơn,</div>
     <br/><br/>
@@ -224,14 +228,14 @@ let sendEmailBooking = async (booking) => {
     <p>You have a medical appointment coming up.</p>
     <p>Appointment info: </p>
     <div><b>Time: ${time_en}</b></div>
-    <div><b>Patient: ${patient.firstName}</b></div>
+    <div><b>Patient: ${patient.lastName} ${patient.firstName}</b></div>
     <div>Thank you very much,</div>
     `
     let emailPatient = await transporter.sendMail({
         from: '"Health" <maithu1801@gmail.com>',
-        to: patient.email,
-        subject: patient.title,
-        html: patient.html,
+        to: doctor.email,
+        subject: doctor.title,
+        html: doctor.html,
     });
 }
 
