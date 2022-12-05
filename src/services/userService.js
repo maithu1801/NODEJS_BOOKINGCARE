@@ -2,6 +2,7 @@ import db from "../models/index";
 import bcrypt from 'bcryptjs';
 const Op = require("sequelize").Op;
 const salt = bcrypt.genSaltSync(10);
+import _, { first } from 'lodash';
 
 let hashUserPassword = (password) => {
     return new Promise(async (resolve, reject) => {
@@ -83,14 +84,37 @@ let getAllUser = (userId) => {
                     }
                 })
             }
-            if (userId && userId !== 'ALL') {
+            if (userId === 'PATIENT') {
                 user = await db.User.findAll({
-                    where: { id: userId },
+                    where: {
+                        roleId: 'R3'
+                    },
                     attributes: {
                         exclude: ['password']
                     }
                 })
             }
+            if (userId === 'DOCTOR') {
+                user = await db.User.findAll({
+                    where: {
+                        roleId: 'R2'
+                    },
+                    attributes: {
+                        exclude: ['password']
+                    }
+                })
+            }
+            if (userId && userId !== 'ALL' && userId !== 'PATIENT' && userId !== 'DOCTOR') {
+                user = await db.User.findAll({
+                    where: {
+                        id: userId
+                    },
+                    attributes: {
+                        exclude: ['password']
+                    }
+                })
+            }
+
             resolve(user)
 
         } catch (e) {
@@ -177,6 +201,9 @@ let updateUserData = (data) => {
                 user.gender = data.gender;
                 user.phonenumber = data.phonenumber;
                 user.token = '';
+                if (data.avatar) {
+                    user.image = data.avatar;
+                }
                 await user.save();
                 resolve({
                     errCode: 0,
@@ -300,6 +327,120 @@ let listManage = (data) => {
 
 }
 
+let adminManageSchedule = (data) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            let res = {};
+            if (data.type === 'get') {
+                let schedule = await db.Booking.findAll({
+                    where: {
+                        statusId: { [Op.gt]: 'S1' },
+                    },
+                    order: [
+                        ['statusId', 'ASC'],
+                    ],
+                    include: [
+                        {
+                            model: db.User, as: 'patientData',
+                            attributes: ['email', 'firstName', 'address', 'gender'],
+                            include: [
+                                { model: db.Allcode, as: 'genderData', attributes: ['valueEn', 'valueVi'] },
+
+                            ]
+                        },
+                        {
+                            model: db.User, as: 'doctorDataSchedule',
+                            attributes: ['firstName', 'lastName'],
+                        },
+                        {
+                            model: db.Allcode, as: 'timeTypeDataPatient', attributes: ['valueEn', 'valueVi'],
+                        }
+                    ],
+                    raw: false,
+                    nest: true
+                })
+                if (schedule) {
+                    res.schedule = schedule;
+                    resolve(res)
+                } else {
+                    resolve({
+                        err: 'NO SCHEDULE'
+                    })
+                }
+            } else if (data.type === 'search') {
+                let arrPatientId = await db.User.findAll({
+                    where: {
+                        [Op.or]: [{
+                            firstName: {
+                                [Op.like]: `%${data.keyWord}%`
+                            },
+                        },
+                        {
+                            lastName: {
+                                [Op.like]: `%${data.keyWord}%`
+                            },
+                        }
+                        ],
+                    },
+                    attributes: ['id'],
+                });
+                console.log('patitent', arrPatientId);
+                if (arrPatientId) {
+                    let res = {};
+                    let boooking = [];
+                    let temp = [];
+                    await Promise.all(arrPatientId.map(async (item, index) => {
+                        temp = await db.Booking.findAll({
+                            where: {
+                                patientId: item.id,
+                            },
+                            order: [
+                                ['id', 'DESC'],
+                            ],
+                            include: [
+                                {
+                                    model: db.User, as: 'patientData',
+                                    attributes: ['email', 'firstName', 'address', 'gender'],
+                                    include: [
+                                        { model: db.Allcode, as: 'genderData', attributes: ['valueEn', 'valueVi'] },
+
+                                    ]
+                                },
+                                {
+                                    model: db.User, as: 'doctorDataSchedule',
+                                    attributes: ['firstName', 'lastName'],
+                                },
+                                {
+                                    model: db.Allcode, as: 'timeTypeDataPatient', attributes: ['valueEn', 'valueVi'],
+                                }
+                            ],
+
+                            raw: false,
+                            nest: true
+                        })
+                        if (!_.isEmpty(temp)) {
+                            Promise.all(temp.map(async (item, index) => {
+                                // kiểm tra time
+                                boooking.push(item);
+                            }))
+                        };
+                    }))
+                    res.booking = boooking;
+                    resolve(res);
+                }
+            }
+            resolve({
+                err: 'NOT IF',
+            })
+        } catch (e) {
+            console.log(e);
+            resolve({
+                err: 'ERR SYNTAS',
+            })
+        }
+    })
+
+}
 module.exports = {
     handleUserLogin: handleUserLogin,
     getAllUser: getAllUser,
@@ -307,5 +448,6 @@ module.exports = {
     deleteUser: deleteUser,
     updateUserData: updateUserData,
     getAllCodeService: getAllCodeService,
-    listManage: listManage
+    listManage: listManage,
+    adminManageSchedule: adminManageSchedule
 }

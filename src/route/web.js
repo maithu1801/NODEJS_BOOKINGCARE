@@ -61,9 +61,7 @@ let initWebRoutes = (app) => {
 
     router.post('/api/list-manage', userController.listManage);
 
-
-
-
+    router.post('/api/admin-manage-schedule', userController.adminManageSchedule);
 
     return app.use("/", router);
 }

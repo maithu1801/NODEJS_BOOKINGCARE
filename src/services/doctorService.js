@@ -53,7 +53,7 @@ let getAllDoctors = () => {
             let doctors = await db.User.findAll({
                 where: { roleId: 'R2' },
                 attributes: {
-                    exclude: ['password', 'image']
+                    exclude: ['password']
                 },
 
                 nest: true
@@ -107,6 +107,7 @@ let saveDetailInforDoctor = (inputData) => {
                 resolve({
                     ok: 'OK'
                 })
+
             } else if (inputData.type && inputData.type === 'search') {
 
                 let doctor = [];
@@ -135,7 +136,37 @@ let saveDetailInforDoctor = (inputData) => {
                     res.doctor = doctor;
                     resolve(res)
                 };
-            } else {
+            } else if (inputData.type && inputData.type === 'search-user') {
+
+                let doctor = [];
+                let res = {};
+                doctor = await db.User.findAll({
+                    where: {
+                        // roleId: 'R2',
+                        [Op.or]: {
+                            firstName: {
+                                [Op.like]: `%${inputData.keyWord}%`
+                            },
+                            lastName: {
+                                [Op.like]: `%${inputData.keyWord}%`
+                            },
+                            address: {
+                                [Op.like]: `%${inputData.keyWord}%`
+                            },
+                            email: {
+                                [Op.like]: `%${inputData.keyWord}%`
+                            },
+                        }
+                    },
+                    raw: true,
+                })
+                if (doctor) {
+                    res.doctor = doctor;
+                    resolve(res)
+                };
+            }
+
+            else {
                 let checkObj = checkRequiredFields(inputData);
                 if (checkObj.isValid === false) {
                     resolve({
@@ -453,8 +484,6 @@ let getProfileDoctorById = (inputId) => {
 }
 
 let getListPatientForDoctor = (doctorId, date) => {
-    // hàm này sao khi chọn ngày là nó sẽ chạy vào đây, nó lấy ra tên, email bệnh nhân đồ các kiểu
-    // 
     return new Promise(async (resolve, reject) => {
         try {
             if (!doctorId || !date) {
@@ -549,18 +578,30 @@ let medicineManage = (data) => {
             let type = data.type;
             let res = {};
             if (type === 'get') {
-                let medicine = [];
-                medicine = await db.Medicine.findAll({
-                    where: {
-                        doctorId: data.doctorId,
-                    },
-                    raw: true,
-                    order: [
-                        ['updatedAt', 'DESC'],
-                    ],
-                })
-                res.list = medicine;
-                resolve(res);
+                if (data.doctorId === 'ALL') {
+                    let medicine = [];
+                    medicine = await db.Medicine.findAll({
+                        raw: true,
+                        order: [
+                            ['updatedAt', 'DESC'],
+                        ],
+                    })
+                    res.list = medicine;
+                    resolve(res);
+                } else {
+                    let medicine = [];
+                    medicine = await db.Medicine.findAll({
+                        where: {
+                            doctorId: data.doctorId,
+                        },
+                        raw: true,
+                        order: [
+                            ['updatedAt', 'DESC'],
+                        ],
+                    })
+                    res.list = medicine;
+                    resolve(res);
+                }
             } else if (type === 'new') {
                 await db.Medicine.create({
                     nameMedicine: data.nameMedicine,
@@ -593,22 +634,40 @@ let medicineManage = (data) => {
                     resolve({})
                 }
             } else if (type === 'search') {
-                let medicine = [];
-                medicine = await db.Medicine.findAll({
-                    where: {
-                        doctorId: data.doctorId,
-                        [Op.or]: {
-                            nameMedicine: {
-                                [Op.like]: `%${data.nameMedicine}%`
-                            },
-                        }
-                    },
-                    raw: true,
-                })
-                if (medicine) {
-                    res.list = medicine;
-                    resolve(res)
-                };
+                if (data.doctorId === 'ALL') {
+                    let medicine = [];
+                    medicine = await db.Medicine.findAll({
+                        where: {
+                            [Op.or]: {
+                                nameMedicine: {
+                                    [Op.like]: `%${data.nameMedicine}%`
+                                },
+                            }
+                        },
+                        raw: true,
+                    })
+                    if (medicine) {
+                        res.list = medicine;
+                        resolve(res)
+                    };
+                } else {
+                    let medicine = [];
+                    medicine = await db.Medicine.findAll({
+                        where: {
+                            doctorId: data.doctorId,
+                            [Op.or]: {
+                                nameMedicine: {
+                                    [Op.like]: `%${data.nameMedicine}%`
+                                },
+                            }
+                        },
+                        raw: true,
+                    })
+                    if (medicine) {
+                        res.list = medicine;
+                        resolve(res)
+                    };
+                }
             } else if (type === 'doctorPrice') {
                 let doctor = await db.User.findOne({
                     where: {
